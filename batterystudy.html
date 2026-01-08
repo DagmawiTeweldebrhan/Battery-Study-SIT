@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIT Battery Intelligence Tool</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #2980b9; --success: #27ae60; --warning: #f39c12; --study: #8e44ad; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { text-align: center; font-size: 1.5rem; margin-bottom: 5px; color: var(--primary); }
+        p.subtitle { text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 20px; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #ddd; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .card { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.85rem; color: #555; }
+        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box; }
+        .result-area { background: var(--primary); color: white; padding: 20px; border-radius: 15px; text-align: center; transition: 0.5s; }
+        .time-display { font-size: 2.5rem; font-weight: bold; display: block; margin: 5px 0; }
+        .study-btn { background: var(--study); color: white; width: 100%; margin-top: 15px; border-radius: 10px; border: none; padding: 15px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .alert { background: var(--warning); color: white; padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 0.8rem; display: none; }
+        .footer { font-size: 0.7rem; color: #999; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>SIT Battery Tool</h1>
+    <p class="subtitle">Galaxy Tab S9 Research Data</p>
+
+    <div class="btn-group">
+        <button class="tab-btn active" id="btn-drain" onclick="setMode('drain')">Use Tablet</button>
+        <button class="tab-btn" id="btn-charge" onclick="setMode('charge')">Charge Up</button>
+    </div>
+
+    <div class="card">
+        <label>Current Battery % (0-100)</label>
+        <input type="number" id="battery" value="100" min="0" max="100" oninput="limitInput(this); calculate();">
+    </div>
+
+    <div class="card" id="brightness-card">
+        <label>Brightness</label>
+        <select id="brightness" onchange="calculate()">
+            <option value="0.7">30% (Best Efficiency)</option>
+            <option value="1.0" selected>60% (SIT Standard)</option>
+            <option value="1.8">100% (Aggressive Drain)</option>
+        </select>
+    </div>
+
+    <div class="card">
+        <label id="app-label">Current Task</label>
+        <select id="app-selector" onchange="calculate()"></select>
+    </div>
+
+    <div class="card" id="multi-card">
+        <label>Multitasking Mode</label>
+        <select id="multitask" onchange="calculate()">
+            <option value="0">Single App Mode</option>
+            <option value="2.91">Split-Screen Mode (+2.91%)</option>
+        </select>
+    </div>
+
+    <div class="result-area" id="res-box">
+        <span id="res-label">Time Remaining</span>
+        <span class="time-display" id="output">--</span>
+        <div id="low-alert" class="alert">⚠️ Threshold Acceleration: Draining 31% faster below 20%!</div>
+    </div>
+
+    <button class="study-btn" id="study-btn" onclick="goStudyMode()">🚀 ENABLE STUDY MODE</button>
+
+    <div class="footer">
+        Strict Research Validation | Idle Charge: 29.71%/hr | Ze Loss: 1.31x
+    </div>
+</div>
+
+<script>
+    let mode = 'drain';
+
+    const appsUse = [
+        { name: "Samsung Notes", rate: 8.57 },
+        { name: "YouTube App", rate: 10.53 },
+        { name: "Web Browser", rate: 10.91 }
+    ];
+
+    const appsCharge = [
+        { name: "Idle (Screen Off)", rate: 29.71 },
+        { name: "Active (Home Screen)", rate: 21.14 },
+        { name: "Using Notes", rate: 18.50 },
+        { name: "Using YouTube", rate: 15.20 }
+    ];
+
+    function limitInput(input) {
+        if (input.value > 100) input.value = 100;
+        if (input.value < 0) input.value = 0;
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btn-drain').classList.toggle('active', mode === 'drain');
+        document.getElementById('btn-charge').classList.toggle('active', mode === 'charge');
+        
+        document.getElementById('brightness-card').style.display = (mode === 'drain') ? 'block' : 'none';
+        document.getElementById('multi-card').style.display = (mode === 'drain') ? 'block' : 'none';
+        document.getElementById('study-btn').style.display = (mode === 'drain') ? 'block' : 'none';
+        document.getElementById('res-label').innerText = (mode === 'drain') ? 'Time Remaining' : 'Time to 100%';
+        document.getElementById('res-box').style.background = (mode === 'drain') ? '#2c3e50' : '#27ae60';
+
+        const selector = document.getElementById('app-selector');
+        selector.innerHTML = '';
+        const list = (mode === 'drain') ? appsUse : appsCharge;
+        list.forEach(item => {
+            let opt = document.createElement('option');
+            opt.value = item.rate;
+            opt.innerText = item.name;
+            selector.appendChild(opt);
+        });
+        calculate();
+    }
+
+    function goStudyMode() {
+        document.getElementById('brightness').value = "0.7";
+        document.getElementById('app-selector').value = "8.57";
+        document.getElementById('multitask').value = "0";
+        document.getElementById('res-box').style.background = "#8e44ad";
+        calculate();
+    }
+
+    function calculate() {
+        let pct = parseFloat(document.getElementById('battery').value);
+        if (isNaN(pct)) pct = 0;
+        
+        const appRate = parseFloat(document.getElementById('app-selector').value) || 0;
+        const brightness = parseFloat(document.getElementById('brightness').value) || 1;
+        const multi = parseFloat(document.getElementById('multitask').value) || 0;
+        const alert = document.getElementById('low-alert');
+
+        let time = 0;
+
+        if (mode === 'drain') {
+            if (pct <= 0) {
+                time = 0;
+            } else {
+                let totalRate = (appRate + multi) * brightness;
+                if (pct <= 20) {
+                    totalRate *= 1.31;
+                    alert.style.display = 'block';
+                } else {
+                    alert.style.display = 'none';
+                }
+                time = pct / totalRate;
+            }
+        } else {
+            alert.style.display = 'none';
+            if (pct >= 100) {
+                time = 0;
+            } else {
+                const needed = 100 - pct;
+                time = needed / appRate;
+            }
+        }
+
+        const h = Math.floor(time);
+        const m = Math.round((time - h) * 60);
+        document.getElementById('output').innerText = (h + "h " + (m < 10 ? "0" + m : m) + "m");
+    }
+
+    setMode('drain');
+</script>
+
+</body>
+</html>
