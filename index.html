@@ -1,172 +1,1281 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIT Battery Intelligence Tool</title>
+    <title>Battery Intelligence Tool - Mathematical Validation</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        :root { --primary: #2c3e50; --accent: #2980b9; --success: #27ae60; --warning: #f39c12; --study: #8e44ad; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { text-align: center; font-size: 1.5rem; margin-bottom: 5px; color: var(--primary); }
-        p.subtitle { text-align: center; font-size: 0.9rem; color: #666; margin-bottom: 20px; }
-        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; background: #ddd; transition: 0.3s; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .card { background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 0.85rem; color: #555; }
-        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box; }
-        .result-area { background: var(--primary); color: white; padding: 20px; border-radius: 15px; text-align: center; transition: 0.5s; }
-        .time-display { font-size: 2.5rem; font-weight: bold; display: block; margin: 5px 0; }
-        .study-btn { background: var(--study); color: white; width: 100%; margin-top: 15px; border-radius: 10px; border: none; padding: 15px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .alert { background: var(--warning); color: white; padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 0.8rem; display: none; }
-        .footer { font-size: 0.7rem; color: #999; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; text-align: center; }
-    </style>
-</head>
-<body>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<div class="container">
-    <h1>SIT Battery Tool</h1>
-    <p class="subtitle">Galaxy Tab S9 Research Data</p>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-    <div class="btn-group">
-        <button class="tab-btn active" id="btn-drain" onclick="setMode('drain')">Use Tablet</button>
-        <button class="tab-btn" id="btn-charge" onclick="setMode('charge')">Charge Up</button>
-    </div>
+        #root {
+            width: 100%;
+            min-height: 100vh;
+        }
 
-    <div class="card">
-        <label>Current Battery % (0-100)</label>
-        <input type="number" id="battery" value="100" min="0" max="100" oninput="limitInput(this); calculate();">
-    </div>
+        /* Enhanced navigation with glassmorphism effect */
+        .nav-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(2, 39, 47, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
 
-    <div class="card" id="brightness-card">
-        <label>Brightness</label>
-        <select id="brightness" onchange="calculate()">
-            <option value="0.7">30% (Best Efficiency)</option>
-            <option value="1.0" selected>60% (SIT Standard)</option>
-            <option value="1.8">100% (Aggressive Drain)</option>
-        </select>
-    </div>
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-    <div class="card">
-        <label id="app-label">Current Task</label>
-        <select id="app-selector" onchange="calculate()"></select>
-    </div>
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #02272F;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    <div class="card" id="multi-card">
-        <label>Multitasking Mode</label>
-        <select id="multitask" onchange="calculate()">
-            <option value="0">Single App Mode</option>
-            <option value="2.91">Split-Screen Mode (+2.91%)</option>
-        </select>
-    </div>
+        .nav-logo {
+            width: 40px;
+            height: 40px;
+            background: #F15A24;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
 
-    <div class="result-area" id="res-box">
-        <span id="res-label">Time Remaining</span>
-        <span class="time-display" id="output">--</span>
-        <div id="low-alert" class="alert">⚠️ Threshold Acceleration: Draining 31% faster below 20%!</div>
-    </div>
+        .nav-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
 
-    <button class="study-btn" id="study-btn" onclick="goStudyMode()">🚀 ENABLE STUDY MODE</button>
+        .nav-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            color: #02272F;
+            border: 2px solid #02272F;
+        }
 
-    <div class="footer">
-        Strict Research Validation | Idle Charge: 29.71%/hr | Ze Loss: 1.31x
-    </div>
-</div>
+        .nav-btn:hover {
+            background: #02272F;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 39, 47, 0.3);
+        }
 
-<script>
-    let mode = 'drain';
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
 
-    const appsUse = [
-        { name: "Samsung Notes", rate: 8.57 },
-        { name: "YouTube App", rate: 10.53 },
-        { name: "Web Browser", rate: 10.91 }
-    ];
+        /* Enhanced progress indicator */
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #F15A24 0%, #EEBE41 100%);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px rgba(241, 90, 36, 0.5);
+        }
 
-    const appsCharge = [
-        { name: "Idle (Screen Off)", rate: 29.71 },
-        { name: "Active (Home Screen)", rate: 21.14 },
-        { name: "Using Notes", rate: 18.50 },
-        { name: "Using YouTube", rate: 15.20 }
-    ];
+        .section-dots {
+            display: flex;
+            gap: 8px;
+        }
 
-    function limitInput(input) {
-        if (input.value > 100) input.value = 100;
-        if (input.value < 0) input.value = 0;
-    }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
 
-    function setMode(m) {
-        mode = m;
-        document.getElementById('btn-drain').classList.toggle('active', mode === 'drain');
-        document.getElementById('btn-charge').classList.toggle('active', mode === 'charge');
-        
-        document.getElementById('brightness-card').style.display = (mode === 'drain') ? 'block' : 'none';
-        document.getElementById('multi-card').style.display = (mode === 'drain') ? 'block' : 'none';
-        document.getElementById('study-btn').style.display = (mode === 'drain') ? 'block' : 'none';
-        document.getElementById('res-label').innerText = (mode === 'drain') ? 'Time Remaining' : 'Time to 100%';
-        document.getElementById('res-box').style.background = (mode === 'drain') ? '#2c3e50' : '#27ae60';
+        .dot.active {
+            background: #F15A24;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(241, 90, 36, 0.5);
+        }
 
-        const selector = document.getElementById('app-selector');
-        selector.innerHTML = '';
-        const list = (mode === 'drain') ? appsUse : appsCharge;
-        list.forEach(item => {
-            let opt = document.createElement('option');
-            opt.value = item.rate;
-            opt.innerText = item.name;
-            selector.appendChild(opt);
-        });
-        calculate();
-    }
+        .dot:hover {
+            transform: scale(1.2);
+        }
 
-    function goStudyMode() {
-        document.getElementById('brightness').value = "0.7";
-        document.getElementById('app-selector').value = "8.57";
-        document.getElementById('multitask').value = "0";
-        document.getElementById('res-box').style.background = "#8e44ad";
-        calculate();
-    }
+        /* Improved main content area with better spacing */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 120px 40px 40px;
+        }
 
-    function calculate() {
-        let pct = parseFloat(document.getElementById('battery').value);
-        if (isNaN(pct)) pct = 0;
-        
-        const appRate = parseFloat(document.getElementById('app-selector').value) || 0;
-        const brightness = parseFloat(document.getElementById('brightness').value) || 1;
-        const multi = parseFloat(document.getElementById('multitask').value) || 0;
-        const alert = document.getElementById('low-alert');
+        .section-slide {
+            min-height: calc(100vh - 160px);
+            animation: fadeIn 0.6s ease-out;
+        }
 
-        let time = 0;
-
-        if (mode === 'drain') {
-            if (pct <= 0) {
-                time = 0;
-            } else {
-                let totalRate = (appRate + multi) * brightness;
-                if (pct <= 20) {
-                    totalRate *= 1.31;
-                    alert.style.display = 'block';
-                } else {
-                    alert.style.display = 'none';
-                }
-                time = pct / totalRate;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
-        } else {
-            alert.style.display = 'none';
-            if (pct >= 100) {
-                time = 0;
-            } else {
-                const needed = 100 - pct;
-                time = needed / appRate;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        const h = Math.floor(time);
-        const m = Math.round((time - h) * 60);
-        document.getElementById('output').innerText = (h + "h " + (m < 10 ? "0" + m : m) + "m");
-    }
+        /* Enhanced formula box with gradient border */
+        .formula-box {
+            padding: 32px;
+            background: white;
+            border-radius: 16px;
+            border: 3px solid transparent;
+            background-image: linear-gradient(white, white), 
+                            linear-gradient(135deg, #F15A24, #EEBE41);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin: 32px 0;
+        }
 
-    setMode('drain');
-</script>
+        .highlight {
+            color: #F15A24;
+            font-weight: 700;
+            padding: 2px 6px;
+            background: rgba(241, 90, 36, 0.1);
+            border-radius: 4px;
+        }
 
+        /* Enhanced simulator styling */
+        .sim-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .sim-btn-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            background: #f3f4f6;
+            padding: 6px;
+            border-radius: 12px;
+        }
+
+        .sim-tab-btn {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: #6b7280;
+        }
+
+        .sim-tab-btn.active {
+            background: white;
+            color: #02272F;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .sim-card {
+            margin-bottom: 24px;
+        }
+
+        .sim-card label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .sim-card input,
+        .sim-card select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .sim-card input:focus,
+        .sim-card select:focus {
+            outline: none;
+            border-color: #F15A24;
+            box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.1);
+        }
+
+        .sim-result-area {
+            padding: 32px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 32px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .sim-result-area span:first-child {
+            display: block;
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sim-time-display {
+            display: block;
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 8px 0;
+        }
+
+        .sim-alert {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .sim-study-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .sim-study-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+
+        .sim-footer {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #f3f4f6;
+            font-size: 0.85rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        /* Better responsive design */
+        @media (max-width: 768px) {
+            .nav-content {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .main-content {
+                padding: 180px 20px 20px;
+            }
+
+            .formula-box {
+                padding: 20px;
+            }
+
+            .sim-container {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [currentSection, setCurrentSection] = useState(0);
+            const [simMode, setSimMode] = useState('drain');
+            const [simBattery, setSimBattery] = useState(80);
+            const [simBrightness, setSimBrightness] = useState(1.0);
+            const [simApp, setSimApp] = useState(8.57);
+            const [simMulti, setSimMulti] = useState(0);
+            const [simResult, setSimResult] = useState('11h 40m');
+            const [simAlert, setSimAlert] = useState(false);
+
+            const chartRefs = useRef({
+                brightness: { chart: null },
+                apps: { chart: null },
+                zone: { chart: null },
+                charging: { chart: null },
+                comparison: { chart: null }
+            });
+
+            const sections = [
+                { id: 'intro', title: 'Introduction' },
+                { id: 'formula1', title: 'Formula 1: Consumption Rate' },
+                { id: 'formula2', title: 'Formula 2: Zone Efficiency' },
+                { id: 'formula3', title: 'Formula 3: Multitasking' },
+                { id: 'formula4', title: 'Formula 4: Charging' },
+                { id: 'simulator', title: 'Interactive Simulator' },
+                { id: 'summary', title: 'Summary' }
+            ];
+
+            useEffect(() => {
+                const section = sections[currentSection];
+                
+                if (section.id === 'formula1') {
+                    setTimeout(() => {
+                        createBrightnessChart();
+                        createAppsChart();
+                    }, 100);
+                } else if (section.id === 'formula2') {
+                    setTimeout(() => createZoneChart(), 100);
+                } else if (section.id === 'formula4') {
+                    setTimeout(() => createChargingChart(), 100);
+                } else if (section.id === 'summary') {
+                    setTimeout(() => createComparisonChart(), 100);
+                }
+            }, [currentSection]);
+
+            useEffect(() => {
+                calculateResult();
+            }, [simMode, simBattery, simBrightness, simApp, simMulti]);
+
+            const calculateResult = () => {
+                if (simMode === 'drain') {
+                    const base = simApp * simBrightness + simMulti;
+                    const zoneMultiplier = simBattery < 20 ? 1.31 : 1.0;
+                    const adjustedRate = base * zoneMultiplier;
+                    const hours = simBattery / adjustedRate;
+                    const h = Math.floor(hours);
+                    const m = Math.round((hours - h) * 60);
+                    setSimResult(`${h}h ${m}m`);
+                    setSimAlert(simBattery < 20);
+                } else {
+                    const remaining = 100 - simBattery;
+                    const hours = remaining / simApp;
+                    const h = Math.floor(hours);
+                    const m = Math.round((hours - h) * 60);
+                    setSimResult(`${h}h ${m}m`);
+                    setSimAlert(false);
+                }
+            };
+
+            const goStudyMode = () => {
+                setSimBattery(80);
+                setSimBrightness(0.7);
+                setSimApp(8.57);
+                setSimMulti(0);
+            };
+
+            const createBrightnessChart = () => {
+                const ctx = document.getElementById('brightnessChart');
+                if (!ctx) return;
+                
+                if (chartRefs.current.brightness.chart) {
+                    chartRefs.current.brightness.chart.destroy();
+                }
+                
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+                        datasets: [
+                            {
+                                label: '25% Brightness',
+                                data: [100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: '50% Brightness',
+                                data: [100, 92, 84, 76, 68, 60, 52, 44, 36, 28, 20],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: '75% Brightness',
+                                data: [100, 88, 76, 64, 52, 40, 28, 16, 4, 0, 0],
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: '100% Brightness',
+                                data: [100, 85, 70, 55, 40, 25, 10, 0, 0, 0, 0],
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { 
+                                    font: { size: 13, weight: '600' },
+                                    padding: 12,
+                                    usePointStyle: true
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Brightness Impact on Battery Life',
+                                font: { size: 16, weight: 'bold' },
+                                padding: 16
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Battery %',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time (Hours)',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            }
+                        }
+                    }
+                });
+                chartRefs.current.brightness.chart = chart;
+            };
+
+            const createAppsChart = () => {
+                const ctx = document.getElementById('appsChart');
+                if (!ctx) return;
+                
+                if (chartRefs.current.apps.chart) {
+                    chartRefs.current.apps.chart.destroy();
+                }
+                
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['0', '2', '4', '6', '8', '10', '12', '14'],
+                        datasets: [
+                            {
+                                label: 'Notes',
+                                data: [100, 82, 65, 48, 31, 14, 0, 0],
+                                borderColor: '#EEBE41',
+                                backgroundColor: 'rgba(238, 190, 65, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'YouTube',
+                                data: [100, 79, 58, 37, 16, 0, 0, 0],
+                                borderColor: '#F15A24',
+                                backgroundColor: 'rgba(241, 90, 36, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Browser',
+                                data: [100, 78, 56, 34, 12, 0, 0, 0],
+                                borderColor: '#8AC4C7',
+                                backgroundColor: 'rgba(138, 196, 199, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Split-Screen',
+                                data: [100, 76, 52, 28, 4, 0, 0, 0],
+                                borderColor: '#02272F',
+                                backgroundColor: 'rgba(2, 39, 47, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { 
+                                    font: { size: 13, weight: '600' },
+                                    padding: 12,
+                                    usePointStyle: true
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'App Comparison at 60% Brightness',
+                                font: { size: 16, weight: 'bold' },
+                                padding: 16
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Battery %',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time (Hours)',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            }
+                        }
+                    }
+                });
+                chartRefs.current.apps.chart = chart;
+            };
+
+            const createZoneChart = () => {
+                const ctx = document.getElementById('zoneChart');
+                if (!ctx) return;
+                
+                if (chartRefs.current.zone.chart) {
+                    chartRefs.current.zone.chart.destroy();
+                }
+                
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Notes', 'YouTube', 'Browser', 'Split-Screen'],
+                        datasets: [{
+                            label: 'Zone Efficiency Loss (%)',
+                            data: [31, 28, 20, 18],
+                            backgroundColor: [
+                                'rgba(241, 90, 36, 0.8)',
+                                'rgba(245, 158, 11, 0.8)',
+                                'rgba(59, 130, 246, 0.8)',
+                                'rgba(16, 185, 129, 0.8)'
+                            ],
+                            borderColor: [
+                                '#F15A24',
+                                '#f59e0b',
+                                '#3b82f6',
+                                '#10b981'
+                            ],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Efficiency Loss Below 20% Battery',
+                                font: { size: 16, weight: 'bold' },
+                                padding: 16
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 35,
+                                title: {
+                                    display: true,
+                                    text: 'Efficiency Loss (%)',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+                chartRefs.current.zone.chart = chart;
+            };
+
+            const createChargingChart = () => {
+                const ctx = document.getElementById('chargingChart');
+                if (!ctx) return;
+                
+                if (chartRefs.current.charging.chart) {
+                    chartRefs.current.charging.chart.destroy();
+                }
+                
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Idle (Screen Off)', 'Active Use'],
+                        datasets: [{
+                            label: '% Gained in 1 Hour',
+                            data: [52, 37],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.8)',
+                                'rgba(238, 190, 65, 0.8)'
+                            ],
+                            borderColor: [
+                                '#10b981',
+                                '#EEBE41'
+                            ],
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: 'Charging Speed Comparison (from 48%)',
+                                font: { size: 16, weight: 'bold' },
+                                padding: 16
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 60,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage Gained (%)',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+                chartRefs.current.charging.chart = chart;
+            };
+
+            const createComparisonChart = () => {
+                const ctx = document.getElementById('comparisonChart');
+                if (!ctx) return;
+                
+                if (chartRefs.current.comparison.chart) {
+                    chartRefs.current.comparison.chart.destroy();
+                }
+                
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15'],
+                        datasets: [
+                            {
+                                label: 'Notes (Best)',
+                                data: [100, 91, 82, 73, 64, 55, 46, 37, 28, 19, 10, 1, 0, 0, 0, 0],
+                                borderColor: '#EEBE41',
+                                backgroundColor: 'rgba(238, 190, 65, 0.1)',
+                                borderWidth: 4,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'YouTube',
+                                data: [100, 89, 78, 67, 56, 45, 34, 23, 12, 1, 0, 0, 0, 0, 0, 0],
+                                borderColor: '#F15A24',
+                                backgroundColor: 'rgba(241, 90, 36, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Browser',
+                                data: [100, 89, 78, 67, 56, 45, 34, 23, 12, 1, 0, 0, 0, 0, 0, 0],
+                                borderColor: '#8AC4C7',
+                                backgroundColor: 'rgba(138, 196, 199, 0.1)',
+                                borderWidth: 3,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Split-Screen (Worst)',
+                                data: [100, 88, 76, 64, 52, 40, 28, 16, 4, 0, 0, 0, 0, 0, 0, 0],
+                                borderColor: '#02272F',
+                                backgroundColor: 'rgba(2, 39, 47, 0.1)',
+                                borderWidth: 3,
+                                borderDash: [5, 5],
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { 
+                                    font: { size: 13, weight: '600' },
+                                    padding: 12,
+                                    usePointStyle: true
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Complete Battery Life Comparison',
+                                font: { size: 16, weight: 'bold' },
+                                padding: 16
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Battery %',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time (Hours)',
+                                    font: { size: 13, weight: '600' }
+                                },
+                                grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                            }
+                        }
+                    }
+                });
+                chartRefs.current.comparison.chart = chart;
+            };
+
+            const renderSection = () => {
+                const section = sections[currentSection];
+                
+                switch(section.id) {
+                    case 'intro':
+                        return (
+                            <div className="section-slide" style={{ textAlign: 'center', padding: '80px 40px' }}>
+                                <img src="/images/image.png" alt="SIT Logo" style={{ width: '200px', margin: '0 auto 40px', filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' }} />
+                                <h1 style={{ fontSize: '56px', fontWeight: '800', color: '#02272F', marginBottom: '24px', lineHeight: 1.2 }}>
+                                    Battery Intelligence Tool
+                                </h1>
+                                <h2 style={{ fontSize: '36px', color: '#F15A24', marginBottom: '24px', fontWeight: '700' }}>
+                                    Mathematical Validation
+                                </h2>
+                                <p style={{ fontSize: '24px', color: '#6b7280', maxWidth: '900px', margin: '0 auto 40px', lineHeight: 1.7 }}>
+                                    The calculations that make our conclusions precise and data-driven
+                                </p>
+                                <div style={{ maxWidth: '700px', margin: '0 auto', padding: '32px', background: 'white', borderRadius: '16px', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}>
+                                    <p style={{ fontSize: '18px', color: '#374151', marginBottom: '16px', lineHeight: 1.6 }}>
+                                        <strong style={{ color: '#F15A24' }}>Testing:</strong> Three identical Galaxy Tab S9s for 30 hours
+                                    </p>
+                                    <p style={{ fontSize: '18px', color: '#374151', lineHeight: 1.6 }}>
+                                        <strong style={{ color: '#F15A24' }}>Result:</strong> Four formulas to quantify battery behavior
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'formula1':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '16px' }}>
+                                    1. Hourly Consumption Rate – C<sub>h</sub>
+                                </h2>
+                                <p style={{ fontSize: '22px', color: '#6b7280', marginBottom: '32px', fontWeight: '500' }}>
+                                    How fast does battery drain per hour?
+                                </p>
+
+                                <div className="formula-box">
+                                    <div style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', color: '#02272F' }}>
+                                        C<sub>h</sub> = (P<sub>initial</sub> − P<sub>final</sub>) × 60 / t
+                                    </div>
+                                    <div style={{ fontSize: '16px', color: '#6b7280', fontWeight: '500' }}>
+                                        Where: P = percentage, t = time in minutes
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', padding: '28px', background: 'white', border: '3px solid #EEBE41', borderRadius: '16px', boxShadow: '0 6px 20px rgba(0,0,0,0.08)' }}>
+                                    <h3 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '20px', color: '#F15A24' }}>
+                                        At 60% brightness, high zone (100–80%):
+                                    </h3>
+                                    <div style={{ display: 'grid', gap: '14px', fontSize: '18px' }}>
+                                        <div style={{ padding: '16px', background: '#f0fdf4', borderLeft: '5px solid #10b981', borderRadius: '8px' }}>
+                                            <strong>Samsung Notes:</strong> (100–80) × 60 / 140 = <span className="highlight">8.57% per hour</span> — most efficient
+                                        </div>
+                                        <div style={{ padding: '16px', background: '#fef3c7', borderLeft: '5px solid #f59e0b', borderRadius: '8px' }}>
+                                            <strong>YouTube:</strong> <span className="highlight">10.53%</span>
+                                        </div>
+                                        <div style={{ padding: '16px', background: '#fee2e2', borderLeft: '5px solid #ef4444', borderRadius: '8px' }}>
+                                            <strong>Browser:</strong> <span className="highlight">10.91%</span> — worse than native YouTube
+                                        </div>
+                                        <div style={{ padding: '16px', background: '#fecaca', borderLeft: '5px solid #dc2626', borderRadius: '8px' }}>
+                                            <strong>Split-screen:</strong> <span className="highlight">12.00%</span> — fastest drain
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    <div style={{ height: '320px', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                        <canvas id="brightnessChart"></canvas>
+                                    </div>
+                                    <div style={{ height: '320px', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                        <canvas id="appsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'formula2':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '16px' }}>
+                                    2. Zone Efficiency Coefficient – Z<sub>e</sub>
+                                </h2>
+                                <p style={{ fontSize: '22px', color: '#6b7280', marginBottom: '32px', fontWeight: '500' }}>
+                                    This reveals <span className="highlight">Threshold Acceleration</span> — battery drains faster when low
+                                </p>
+
+                                <div className="formula-box">
+                                    <div style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', color: '#02272F' }}>
+                                        Z<sub>e</sub> = T<sub>High</sub> / T<sub>Low</sub>
+                                    </div>
+                                    <div style={{ fontSize: '16px', color: '#6b7280', fontWeight: '500' }}>
+                                        Where: T<sub>High</sub> = time in high zone (100-80%), T<sub>Low</sub> = time in low zone (20-0%)
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', padding: '28px', background: 'white', border: '3px solid #dc2626', borderRadius: '16px', boxShadow: '0 6px 20px rgba(220,38,38,0.15)' }}>
+                                    <h3 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '20px', color: '#dc2626' }}>
+                                        Efficiency Loss Below 20%:
+                                    </h3>
+                                    <div style={{ display: 'grid', gap: '14px', fontSize: '18px' }}>
+                                        <div style={{ padding: '18px', background: '#fee2e2', borderRadius: '10px', border: '2px solid #fca5a5' }}>
+                                            <strong>Notes:</strong> 140 min high / 107 min low = <span className="highlight">1.31</span> → <span className="highlight">31% efficiency loss</span> below 20%
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fef3c7', borderRadius: '10px', border: '2px solid #fde047' }}>
+                                            <strong>YouTube:</strong> ≈ <span className="highlight">1.28</span> (28% loss)
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#dbeafe', borderRadius: '10px', border: '2px solid #93c5fd' }}>
+                                            <strong>Browser:</strong> <span className="highlight">1.20</span> (20% loss)
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#d1fae5', borderRadius: '10px', border: '2px solid #6ee7b7' }}>
+                                            <strong>Split-screen:</strong> <span className="highlight">1.18</span> (18% loss)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', height: '360px', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                    <canvas id="zoneChart"></canvas>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'formula3':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '16px' }}>
+                                    3. Multitasking Intensity Factor – I<sub>m</sub>
+                                </h2>
+                                <p style={{ fontSize: '22px', color: '#6b7280', marginBottom: '32px', fontWeight: '500' }}>
+                                    Extra drain from split-screen usage
+                                </p>
+
+                                <div className="formula-box">
+                                    <div style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', color: '#02272F' }}>
+                                        I<sub>m</sub> = C<sub>h</sub>(Split) − C<sub>h</sub>(Single)
+                                    </div>
+                                    <div style={{ fontSize: '16px', color: '#6b7280', fontWeight: '500' }}>
+                                        Difference between split-screen and single app consumption
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', padding: '32px', background: 'white', border: '3px solid #F15A24', borderRadius: '16px', boxShadow: '0 6px 20px rgba(241,90,36,0.15)' }}>
+                                    <h3 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '28px', color: '#F15A24' }}>
+                                        Critical Zone Analysis:
+                                    </h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '40px', marginBottom: '28px' }}>
+                                        <div style={{ textAlign: 'center', padding: '28px', background: '#f0fdf4', borderRadius: '16px', flex: 1, border: '3px solid #6ee7b7' }}>
+                                            <div style={{ fontSize: '56px', fontWeight: '900', color: '#10b981' }}>12%</div>
+                                            <div style={{ fontSize: '18px', color: '#6b7280', marginTop: '8px', fontWeight: '600' }}>Split-Screen</div>
+                                        </div>
+                                        <div style={{ fontSize: '36px', fontWeight: '800', color: '#6b7280' }}>vs</div>
+                                        <div style={{ textAlign: 'center', padding: '28px', background: '#dbeafe', borderRadius: '16px', flex: 1, border: '3px solid #93c5fd' }}>
+                                            <div style={{ fontSize: '56px', fontWeight: '900', color: '#3b82f6' }}>8.57%</div>
+                                            <div style={{ fontSize: '18px', color: '#6b7280', marginTop: '8px', fontWeight: '600' }}>Notes</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'center', padding: '28px', background: '#fee2e2', borderRadius: '16px', border: '3px solid #fca5a5' }}>
+                                        <div style={{ fontSize: '32px', fontWeight: '900', color: '#dc2626', marginBottom: '12px' }}>
+                                            +3.43% extra drain per hour
+                                        </div>
+                                        <div style={{ fontSize: '20px', color: '#6b7280', fontWeight: '600' }}>
+                                            Multitasking adds a clear 3.43% hourly penalty
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'formula4':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '16px' }}>
+                                    4. Net Charge Recovery – C<sub>r</sub>
+                                </h2>
+                                <p style={{ fontSize: '22px', color: '#6b7280', marginBottom: '32px', fontWeight: '500' }}>
+                                    How much slower is charging when actively using?
+                                </p>
+
+                                <div className="formula-box">
+                                    <div style={{ fontSize: '28px', fontWeight: '800', marginBottom: '16px', color: '#02272F' }}>
+                                        C<sub>r</sub> = Rate<sub>Idle</sub> − Rate<sub>Active</sub>
+                                    </div>
+                                    <div style={{ fontSize: '16px', color: '#6b7280', fontWeight: '500' }}>
+                                        Difference between idle and active charging rates
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', padding: '32px', background: 'white', border: '3px solid #3b82f6', borderRadius: '16px', boxShadow: '0 6px 20px rgba(59,130,246,0.15)' }}>
+                                    <h3 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '28px', color: '#3b82f6' }}>
+                                        Charging Speed Comparison:
+                                    </h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+                                        <div style={{ textAlign: 'center', padding: '36px', background: '#f0fdf4', borderRadius: '16px', border: '3px solid #6ee7b7' }}>
+                                            <div style={{ fontSize: '64px', fontWeight: '900', color: '#10b981' }}>+29.71%</div>
+                                            <div style={{ fontSize: '22px', color: '#6b7280', marginTop: '12px', fontWeight: '700' }}>Idle Charging</div>
+                                            <div style={{ fontSize: '16px', color: '#9ca3af', marginTop: '8px' }}>per hour</div>
+                                        </div>
+                                        <div style={{ textAlign: 'center', padding: '36px', background: '#fef3c7', borderRadius: '16px', border: '3px solid #fde047' }}>
+                                            <div style={{ fontSize: '64px', fontWeight: '900', color: '#f59e0b' }}>+21.14%</div>
+                                            <div style={{ fontSize: '22px', color: '#6b7280', marginTop: '12px', fontWeight: '700' }}>Active Use</div>
+                                            <div style={{ fontSize: '16px', color: '#9ca3af', marginTop: '8px' }}>per hour</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'center', padding: '28px', background: '#fee2e2', borderRadius: '16px', border: '3px solid #fca5a5' }}>
+                                        <div style={{ fontSize: '36px', fontWeight: '900', color: '#dc2626', marginBottom: '12px' }}>
+                                            Difference: 8.57% lost per hour
+                                        </div>
+                                        <div style={{ fontSize: '22px', color: '#6b7280', fontWeight: '600' }}>
+                                            ~29% slower when using the tablet while charging
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '32px', height: '360px', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                    <canvas id="chargingChart"></canvas>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'simulator':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '16px', textAlign: 'center' }}>
+                                    Interactive Battery Simulator
+                                </h2>
+                                <p style={{ fontSize: '22px', color: '#6b7280', marginBottom: '40px', textAlign: 'center', fontWeight: '500' }}>
+                                    Test our formulas in real-time with live predictions
+                                </p>
+
+                                <div className="sim-container">
+                                    <h1 style={{ textAlign: 'center', fontSize: '1.75rem', marginBottom: '8px', color: '#02272F', fontWeight: '800' }}>Battery Tool</h1>
+                                    <p style={{ textAlign: 'center', fontSize: '1rem', color: '#6b7280', marginBottom: '24px' }}>Galaxy Tab S9 Research Data</p>
+
+                                    <div className="sim-btn-group">
+                                        <button 
+                                            className={`sim-tab-btn ${simMode === 'drain' ? 'active' : ''}`}
+                                            onClick={() => setSimMode('drain')}
+                                        >
+                                            Use Tablet
+                                        </button>
+                                        <button 
+                                            className={`sim-tab-btn ${simMode === 'charge' ? 'active' : ''}`}
+                                            onClick={() => setSimMode('charge')}
+                                        >
+                                            Charge Up
+                                        </button>
+                                    </div>
+
+                                    <div className="sim-card">
+                                        <label>Current Battery % (0-100)</label>
+                                        <input 
+                                            type="number" 
+                                            value={simBattery} 
+                                            min="0" 
+                                            max="100" 
+                                            onChange={(e) => setSimBattery(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                                        />
+                                    </div>
+
+                                    {simMode === 'drain' && (
+                                        <div className="sim-card">
+                                            <label>Brightness</label>
+                                            <select value={simBrightness} onChange={(e) => setSimBrightness(parseFloat(e.target.value))}>
+                                                <option value="0.7">30% (Best Efficiency)</option>
+                                                <option value="1.0">60% (SIT Standard)</option>
+                                                <option value="1.8">100% (Aggressive Drain)</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="sim-card">
+                                        <label>{simMode === 'drain' ? 'Current Task' : 'Charging Activity'}</label>
+                                        <select value={simApp} onChange={(e) => setSimApp(parseFloat(e.target.value))}>
+                                            {simMode === 'drain' ? (
+                                                <>
+                                                    <option value="8.57">Samsung Notes</option>
+                                                    <option value="10.53">YouTube App</option>
+                                                    <option value="10.91">Web Browser</option>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <option value="29.71">Idle (Screen Off)</option>
+                                                    <option value="21.14">Active (Home Screen)</option>
+                                                    <option value="18.50">Using Notes</option>
+                                                    <option value="15.20">Using YouTube</option>
+                                                </>
+                                            )}
+                                        </select>
+                                    </div>
+
+                                    {simMode === 'drain' && (
+                                        <div className="sim-card">
+                                            <label>Multitasking Mode</label>
+                                            <select value={simMulti} onChange={(e) => setSimMulti(parseFloat(e.target.value))}>
+                                                <option value="0">Single App Mode</option>
+                                                <option value="2.91">Split-Screen Mode (+2.91%)</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    <div className="sim-result-area" style={{ background: simMode === 'drain' ? '#02272F' : '#27ae60' }}>
+                                        <span>{simMode === 'drain' ? 'Time Remaining' : 'Time to 100%'}</span>
+                                        <span className="sim-time-display">{simResult}</span>
+                                        <div className={`sim-alert ${simAlert ? 'show' : ''}`} style={{ display: simAlert ? 'block' : 'none' }}>
+                                            ⚠️ Threshold Acceleration: Draining 31% faster below 20%!
+                                        </div>
+                                    </div>
+
+                                    {simMode === 'drain' && (
+                                        <button className="sim-study-btn" onClick={goStudyMode}>
+                                            🚀 ENABLE STUDY MODE
+                                        </button>
+                                    )}
+
+                                    <div className="sim-footer">
+                                        Strict Research Validation | Idle Charge: 29.71%/hr | Ze Loss: 1.31x
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    
+                    case 'summary':
+                        return (
+                            <div className="section-slide" style={{ padding: '40px' }}>
+                                <h2 style={{ fontSize: '40px', fontWeight: '800', color: '#02272F', marginBottom: '40px', textAlign: 'center' }}>
+                                    Summary & Recommendations
+                                </h2>
+
+                                <div style={{ display: 'grid', gap: '24px', marginBottom: '32px' }}>
+                                    <div style={{ padding: '28px', background: '#fee2e2', borderLeft: '8px solid #dc2626', borderRadius: '12px', boxShadow: '0 4px 12px rgba(220,38,38,0.15)' }}>
+                                        <h3 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '12px', color: '#dc2626' }}>
+                                            Split-screen costs <span className="highlight">+3.43% extra/hour</span>
+                                        </h3>
+                                        <p style={{ fontSize: '19px', color: '#6b7280', fontWeight: '500' }}>
+                                            Avoid multitasking when battery is critical
+                                        </p>
+                                    </div>
+
+                                    <div style={{ padding: '28px', background: '#fef3c7', borderLeft: '8px solid #f59e0b', borderRadius: '12px', boxShadow: '0 4px 12px rgba(245,158,11,0.15)' }}>
+                                        <h3 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '12px', color: '#ea580c' }}>
+                                            Below 20%: up to <span className="highlight">31% efficiency loss</span>
+                                        </h3>
+                                        <p style={{ fontSize: '19px', color: '#6b7280', fontWeight: '500' }}>
+                                            Threshold acceleration kicks in — charge before this zone
+                                        </p>
+                                    </div>
+
+                                    <div style={{ padding: '28px', background: '#dbeafe', borderLeft: '8px solid #3b82f6', borderRadius: '12px', boxShadow: '0 4px 12px rgba(59,130,246,0.15)' }}>
+                                        <h3 style={{ fontSize: '26px', fontWeight: '800', marginBottom: '12px', color: '#2563eb' }}>
+                                            Active charging wastes <span className="highlight">29% of speed</span>
+                                        </h3>
+                                        <p style={{ fontSize: '19px', color: '#6b7280', fontWeight: '500' }}>
+                                            Screen-off charging is significantly faster
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div style={{ padding: '36px', background: '#f0fdf4', border: '4px solid #10b981', borderRadius: '16px', marginBottom: '32px', boxShadow: '0 6px 20px rgba(16,185,129,0.15)' }}>
+                                    <h3 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '24px', color: '#10b981', textAlign: 'center' }}>
+                                        ✓ Our Recommendations
+                                    </h3>
+                                    <div style={{ display: 'grid', gap: '16px', fontSize: '19px' }}>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Use <strong>Samsung Notes</strong> for maximum battery life
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Prefer <strong>native apps</strong> over web browsers
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Keep brightness at <strong>30–60%</strong> range
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Avoid <strong>split-screen</strong> mode when possible
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Use <strong>screen-off charging</strong> for fastest results
+                                        </div>
+                                        <div style={{ padding: '18px', background: '#fff', borderRadius: '10px', fontWeight: '500', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                                            ✓ Charge <strong>before reaching 20%</strong> to avoid efficiency loss
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ height: '380px', background: 'white', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                                    <canvas id="comparisonChart"></canvas>
+                                </div>
+                            </div>
+                        );
+                }
+            };
+
+            const nextSection = () => {
+                if (currentSection < sections.length - 1) {
+                    setCurrentSection(currentSection + 1);
+                }
+            };
+
+            const prevSection = () => {
+                if (currentSection > 0) {
+                    setCurrentSection(currentSection - 1);
+                }
+            };
+
+            const goToSection = (index) => {
+                setCurrentSection(index);
+            };
+
+            const progressPercent = ((currentSection + 1) / sections.length) * 100;
+
+            return (
+                <div>
+                    <nav className="nav-container">
+                        <div className="nav-content">
+                            <div className="nav-title">
+                                <div className="nav-logo">⚡</div>
+                                <span>Battery Intelligence Tool</span>
+                            </div>
+                            <div className="nav-controls">
+                                <button 
+                                    className="nav-btn" 
+                                    onClick={prevSection}
+                                    disabled={currentSection === 0}
+                                >
+                                    ← Previous
+                                </button>
+                                <div className="section-dots">
+                                    {sections.map((_, index) => (
+                                        <div
+                                            key={index}
+                                            className={`dot ${index === currentSection ? 'active' : ''}`}
+                                            onClick={() => goToSection(index)}
+                                        />
+                                    ))}
+                                </div>
+                                <button 
+                                    className="nav-btn" 
+                                    onClick={nextSection}
+                                    disabled={currentSection === sections.length - 1}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                        <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
+                    </nav>
+
+                    <main className="main-content">
+                        {renderSection()}
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
 </body>
 </html>
